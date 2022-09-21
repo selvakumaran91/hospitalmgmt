@@ -4,8 +4,9 @@ import java.util.List;
 
 public class HplFilterSort {
 	
-	List<HplSort> sorts;
-	List<HplFilter> filters;
+	private List<HplSort> sorts;
+	private List<HplFilter> filters;
+	
 	public List<HplSort> getSorts() {
 		return sorts;
 	}

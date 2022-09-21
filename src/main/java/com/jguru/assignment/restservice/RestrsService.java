@@ -3,16 +3,12 @@ package com.jguru.assignment.restservice;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
-import java.util.Map;
 
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.Status;
 
 import org.apache.log4j.Logger;
-import org.codehaus.jettison.json.JSONArray;
-import org.codehaus.jettison.json.JSONObject;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -22,11 +18,9 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Pageable;
 
 import com.jguru.assignment.jpa.model.HplPatientMaster;
+import com.jguru.assignment.response.model.HplPatientMasterResponse;
 import com.jguru.assignment.rqeust.model.HplFilter;
 import com.jguru.assignment.rqeust.model.HplFilterSort;
 import com.jguru.assignment.rqeust.model.HplSort;
@@ -160,49 +154,33 @@ public class RestrsService {
 	        @RequestParam(defaultValue = "3") int size
 	      ) {
 		Response result = null;
-	    try {
-	    	
-	    	List<Object> sortProperties = new ArrayList<>();
-	    	List<Object> sortTypes = new ArrayList<>();
-	    	List<Object> operator = new ArrayList<>();
-	    	List<Object> value = new ArrayList<>();
-	    	List<Object> property = new ArrayList<>();
-	    	if(filterSort != null) {
-	    		List<HplSort> sorts = filterSort.getSorts();
-	    		List<HplFilter> filters = filterSort.getFilters();
-	    		if(sorts != null) {
-	    			for(HplSort sort : sorts) {
-	    				sortProperties.add(sort.getProperty());
-	    				sortTypes.add(sort.getDir());
-	    			}
-	    		}
-	    		if(filters != null) {
-	    			for(HplFilter filter : filters) {
-	    				operator.add(filter.getOperator());
-	    				value.add(filter.getValue());
-	    				property.add(filter.getProperty());
-	    			}
-	    		}
-	    	}
-	    	else {
-	    		 return Response.status(Status.PRECONDITION_FAILED).build();
-	    	}
-	    	
-//	      List<HplPatientMaster> tutorials = new ArrayList();
-//	      Pageable paging = PageRequest.of(page, size);
-//	      
-//	      Page<Tutorial> pageTuts = tutorialRepository.findByPublished(true, paging);
-//	      tutorials = pageTuts.getContent();
-	      //List<HplPatientMaster> patientDetails = restService.getPatientdetails(sortProperties, sortTypes, operator, value, property, page, size);
-	      result = Response.ok("Success").build();
-//	      Map<String, Object> response = new HashMap<>();
-//	      response.put("tutorials", tutorials);
-//	      response.put("currentPage", pageTuts.getNumber());
-//	      response.put("totalItems", pageTuts.getTotalElements());
-//	      response.put("totalPages", pageTuts.getTotalPages());
-	      
-	      
-	    } catch(Exception e) { 
+		try {
+
+			List<Object> sortProperties = new ArrayList<>();
+			List<Object> sortTypes = new ArrayList<>();
+			List<Object> operator = new ArrayList<>();
+			List<Object> value = new ArrayList<>();
+			List<Object> property = new ArrayList<>();
+			if(filterSort != null) {
+				List<HplSort> sorts = filterSort.getSorts();
+				List<HplFilter> filters = filterSort.getFilters();
+				if(sorts != null) {
+					for(HplSort sort : sorts) {
+						sortProperties.add(sort.getProperty());
+						sortTypes.add(sort.getDir());
+					}
+				}
+				if(filters != null) {
+					for(HplFilter filter : filters) {
+						operator.add(filter.getOperator());
+						value.add(filter.getValue());
+						property.add(filter.getProperty());
+					}
+				}
+			}
+			HplPatientMasterResponse patientDetails = restService.getPatientdetails(sortProperties, sortTypes, operator, value, property, page, size);
+			result = Response.ok(patientDetails).build();
+		} catch(Exception e) { 
 			log.error("Error in getting all patients detail with filters and pagination ");
 			e.printStackTrace();
 			result = Response.status(Status.NOT_MODIFIED).build();

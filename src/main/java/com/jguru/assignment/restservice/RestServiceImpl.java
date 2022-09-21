@@ -8,6 +8,7 @@ import org.springframework.stereotype.Service;
 
 import com.jguru.assignment.jpa.model.HplPatientMaster;
 import com.jguru.assignment.jpa.service.PresistenceService;
+import com.jguru.assignment.response.model.HplPatientMasterResponse;
 
 @Service(value = "restService")
 public class RestServiceImpl implements RestService {
@@ -30,6 +31,12 @@ public class RestServiceImpl implements RestService {
 	@Override
 	public List<HplPatientMaster> getPatients() throws Exception {
 		return presistenceService.getPatients();
+	}
+
+	@Override
+	public HplPatientMasterResponse getPatientdetails(List<Object> sortProperties, List<Object> sortTypes,
+			List<Object> operator, List<Object> value, List<Object> property, int page, int size) throws Exception {
+		return presistenceService.getPatientdetails( sortProperties, sortTypes,operator, value, property, page, size);
 	}
 
 }

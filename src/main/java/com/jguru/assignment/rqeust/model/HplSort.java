@@ -2,8 +2,9 @@ package com.jguru.assignment.rqeust.model;
 
 public class HplSort {
 	
-	String property;
-	String dir;
+	private String property;
+	private String dir;
+	
 	public HplSort(String property, String dir) {
 		super();
 		this.property = property;

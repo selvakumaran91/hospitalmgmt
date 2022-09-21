@@ -2,9 +2,16 @@ package com.jguru.assignment.rqeust.model;
 
 public class HplFilter {
 	
-	String operator;
-	String value;
-	String property;
+	private String operator;
+	private String value;
+	private String property;
+	
+	public HplFilter(String operator, String value, String property) {
+		super();
+		this.operator = operator;
+		this.value = value;
+		this.property = property;
+	}
 	public String getOperator() {
 		return operator;
 	}
