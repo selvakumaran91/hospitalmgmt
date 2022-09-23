@@ -51,10 +51,10 @@ public class RestrsService {
 				String gender = patientMaster.getGender();
 				String address = patientMaster.getAddress();
 				String telephoneNo = patientMaster.getTelephoneNo();
-				if(patientName == null || patientName.equals("") || dob == null || dob.equals("") ||
+				if(patientId !=  0 || patientName == null || patientName.equals("") || dob == null ||
 						gender == null || gender.equals("") || address == null || address.equals("") ||
 						telephoneNo == null || telephoneNo.equals("")) {
-					result = new ResponseEntity<>(null, HttpStatus.PRECONDITION_FAILED);
+					return new ResponseEntity<>(null, HttpStatus.PRECONDITION_FAILED);
 				}
 				patientMaster.setPatientId(patientId);
 				HplPatientMaster hplPatientMaster = restService.saveUpdatePatient(patientMaster);
@@ -83,10 +83,10 @@ public class RestrsService {
 				String gender = patientMaster.getGender();
 				String address = patientMaster.getAddress();
 				String telephoneNo = patientMaster.getTelephoneNo();
-				if(patientId !=  0 || patientName == null || patientName.equals("") || dob == null || dob.equals("") ||
+				if(patientId ==  0 || patientName == null || patientName.equals("") || dob == null  ||
 						gender == null || gender.equals("") || address == null || address.equals("") ||
 						telephoneNo == null || telephoneNo.equals("")) {
-					result = new ResponseEntity<>(null, HttpStatus.PRECONDITION_FAILED);
+					return new ResponseEntity<>(null, HttpStatus.PRECONDITION_FAILED);
 				}
 				patientMaster.setPatientId(patientId);
 				HplPatientMaster hplPatientMaster = restService.saveUpdatePatient(patientMaster);
