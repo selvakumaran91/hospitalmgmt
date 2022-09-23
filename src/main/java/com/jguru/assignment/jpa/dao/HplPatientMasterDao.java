@@ -19,6 +19,8 @@ public interface HplPatientMasterDao extends CrudRepository<HplPatientMaster, In
 	void deleteParentid(Integer patientid, Integer currentUser, Date currentDate);
 
 	List<HplPatientMaster> findByIsActive(String isActive);
+
+	HplPatientMaster findByPatientIdAndIsActive(Integer patientId, String isActive);
 	
 
 }

@@ -1,0 +1,23 @@
+hpl_patient_master:
+  - patient_id: 1
+    patient_name: "Name 1"
+    dob: "1988-05-4"
+    gender: "M"
+    address: "chennai"
+    telephone_no: "87878787878"
+    is_active: "Y"
+    created_by:  1
+    created_date: "2022-09-22 02:01:57"
+    modified_by: null
+    modified_date: null
+  - patient_id: 2
+    patient_name: "Name 2"
+    dob: "1988-08-4"
+    gender: "M"
+    address: "chennai"
+    telephone_no: "87878787878"
+    is_active: "Y"
+    created_by:  1
+    created_date: "2022-09-22 02:01:57"
+    modified_by: null
+    modified_date: null

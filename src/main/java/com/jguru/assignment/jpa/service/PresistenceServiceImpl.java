@@ -12,7 +12,6 @@ import javax.persistence.TypedQuery;
 import javax.persistence.criteria.CriteriaBuilder;
 import javax.persistence.criteria.CriteriaQuery;
 import javax.persistence.criteria.Order;
-import javax.persistence.criteria.Path;
 import javax.persistence.criteria.Predicate;
 import javax.persistence.criteria.Root;
 import javax.xml.parsers.ParserConfigurationException;
@@ -25,6 +24,9 @@ import org.springframework.transaction.annotation.Transactional;
 import com.jguru.assignment.jpa.dao.HplPatientMasterDao;
 import com.jguru.assignment.jpa.model.HplPatientMaster;
 import com.jguru.assignment.response.model.HplPatientMasterResponse;
+import com.jguru.assignment.rqeust.model.HplFilter;
+import com.jguru.assignment.rqeust.model.HplFilterSort;
+import com.jguru.assignment.rqeust.model.HplSort;
 
 @Repository(value = "presistenceService")
 @Transactional
@@ -39,23 +41,26 @@ public class PresistenceServiceImpl implements PresistenceService {
 	static Logger log = Logger.getLogger(PresistenceServiceImpl.class);
 	
 	@Override
-	public HplPatientMaster saveUpdatePatient(Integer patientId, String patientName, Date dob, String gender, String address,
-			String telephoneNo) throws Exception {
+	public HplPatientMaster saveUpdatePatient(HplPatientMaster patientMaster) throws Exception {
 		HplPatientMaster hplPatientMaster = new HplPatientMaster();
+		String IsActive = "Y";
 		try {
-			if(patientId != 0) {
-				hplPatientMaster =hplPatientMasterDao.findByPatientId(patientId);
-			}
+			if(patientMaster.getPatientId() != 0) {
+				hplPatientMaster = findByPatientIdAndIsActive(patientMaster.getPatientId(), IsActive);
+				if(hplPatientMaster == null) {
+					return null;
+				}
+			} 
 			Date currentDate = getCurrentDate();
 			//DateFormat dobDateFormat  = new SimpleDateFormat("yyyy-MM-dd");
 			//dobDateFormat.setTimeZone(TimeZone.getTimeZone("America/Los_Angeles"));
-			hplPatientMaster.setPatientName(patientName);
-			hplPatientMaster.setDob(dob);
-			hplPatientMaster.setGender(gender);
-			hplPatientMaster.setAddress(address);
-			hplPatientMaster.setTelephoneNo(telephoneNo);
+			hplPatientMaster.setPatientName(patientMaster.getPatientName());
+			hplPatientMaster.setDob(patientMaster.getDob());
+			hplPatientMaster.setGender(patientMaster.getGender());
+			hplPatientMaster.setAddress(patientMaster.getAddress());
+			hplPatientMaster.setTelephoneNo(patientMaster.getTelephoneNo());
 			hplPatientMaster.setIsActive("Y");
-			if(patientId == 0) {
+			if(patientMaster.getPatientId() == 0) {
 				//TODO : The current user should be session user
 				hplPatientMaster.setCreatedby(1);
 				hplPatientMaster.setCreatedDate(currentDate);
@@ -70,6 +75,12 @@ public class PresistenceServiceImpl implements PresistenceService {
 		}
 		return hplPatientMaster;
 	}
+	
+	@Override
+	public HplPatientMaster findByPatientIdAndIsActive(Integer patientId, String IsActive) {
+		return  hplPatientMasterDao.findByPatientIdAndIsActive(patientId, IsActive);
+	}
+
 
 	/*
 	 * To change the date format to the required format
@@ -86,15 +97,24 @@ public class PresistenceServiceImpl implements PresistenceService {
 	}
 
 	@Override
-	public void deletePatient(Integer patientId) throws Exception {
+	public String deletePatient(Integer patientId) throws Exception {
+		String response;
 		try {
+			HplPatientMaster hplPatientMaster = findByPatientIdAndIsActive(patientId, "Y");
+			if(hplPatientMaster != null) {
 			Date currentDate = getCurrentDate();
 			//TODO : The current user should be session user
 			Integer currentUser = 1;
 			hplPatientMasterDao.deleteParentid(patientId, currentUser, currentDate);
+			response = "Record Deleted Successfully";
+			} else {
+				response = "Record Allready Deleted";
+			}
+			
 		} catch(Exception e) {
 			throw new Exception();
 		}
+		return response;
 	}
 
 	@Override
@@ -110,10 +130,34 @@ public class PresistenceServiceImpl implements PresistenceService {
 	}
 
 	@Override
-	public HplPatientMasterResponse getPatientdetails(List sortProperties, List sortTypes,
-			List operator, List value, List property, int page, int size) throws Exception {
+	public HplPatientMasterResponse getPatientdetails(HplFilterSort filterSort, int page, int size) throws Exception {
 		HplPatientMasterResponse response = new HplPatientMasterResponse();
 		try {
+			
+			List sortProperties = new ArrayList<>();
+			List sortTypes = new ArrayList<>();
+			List operator = new ArrayList<>();
+			List value = new ArrayList<>();
+			List property = new ArrayList<>();
+			if(filterSort != null) {
+				List<HplSort> sorts = filterSort.getSorts();
+				List<HplFilter> filters = filterSort.getFilters();
+				if(sorts != null) {
+					for(HplSort sort : sorts) {
+						sortProperties.add(sort.getProperty());
+						sortTypes.add(sort.getDir());
+					}
+				}
+				if(filters != null) {
+					for(HplFilter filter : filters) {
+						operator.add(filter.getOperator());
+						value.add(filter.getValue());
+						property.add(filter.getProperty());
+					}
+				}
+			}
+		
+			
 			List<HplPatientMaster> records = new ArrayList<>();
 			String isActive = "Y";
 			CriteriaBuilder cb = em.getCriteriaBuilder();
@@ -210,6 +254,9 @@ public class PresistenceServiceImpl implements PresistenceService {
 					break;
 				case "bln"	:
 					filterCondition = cb.and(filterCondition,cb.equal(root.get(columnName), Boolean.parseBoolean(val)));
+					break;
+				case "eq":
+					filterCondition = cb.and(filterCondition,cb.equal(root.get(columnName), val));
 					break;
 				case "in"	:
 					// TODO

@@ -4,11 +4,10 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 
-import javax.ws.rs.core.Response;
-import javax.ws.rs.core.Response.Status;
-
 import org.apache.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -43,8 +42,8 @@ public class RestrsService {
 	 * @return Saved patient details 
 	 */
 	@PostMapping("/patient")
-	public Response savePatient(@RequestBody HplPatientMaster patientMaster ) {
-		Response result = null;
+	public ResponseEntity<HplPatientMaster> savePatient(@RequestBody HplPatientMaster patientMaster ) {
+		ResponseEntity<HplPatientMaster> result = null;
 		try {
 			Integer patientId = 0;
 				String patientName = patientMaster.getPatientName();
@@ -55,15 +54,15 @@ public class RestrsService {
 				if(patientName == null || patientName.equals("") || dob == null || dob.equals("") ||
 						gender == null || gender.equals("") || address == null || address.equals("") ||
 						telephoneNo == null || telephoneNo.equals("")) {
-					result = Response.status(Status.PRECONDITION_FAILED).build();
+					result = new ResponseEntity<>(null, HttpStatus.PRECONDITION_FAILED);
 				}
-
-				HplPatientMaster hplPatientMaster = restService.saveUpdatePatient(patientId, patientName, dob, gender, address, telephoneNo);
-				result = Response.ok(hplPatientMaster).build();
+				patientMaster.setPatientId(patientId);
+				HplPatientMaster hplPatientMaster = restService.saveUpdatePatient(patientMaster);
+				result =new ResponseEntity<>(hplPatientMaster, HttpStatus.CREATED);
 		} catch(Exception e) {
 			log.error("Error in save patient");
 			e.printStackTrace();
-			result = Response.status(Status.NOT_MODIFIED).build();
+			result = new ResponseEntity<>(null, HttpStatus.NOT_MODIFIED);
 		}
 		return result;
 	}
@@ -76,8 +75,8 @@ public class RestrsService {
 	 * @return Updated patient details 
 	 */
 	@PutMapping("/patient/{patientId}")
-	public Response updatePatient(@PathVariable("patientId") Integer patientId,@RequestBody HplPatientMaster patientMaster ) {
-		Response result = null;
+	public ResponseEntity<HplPatientMaster> updatePatient(@PathVariable("patientId") Integer patientId,@RequestBody HplPatientMaster patientMaster ) {
+		ResponseEntity<HplPatientMaster> result = null;
 		try {
 				String patientName = patientMaster.getPatientName();
 				Date dob = patientMaster.getDob();
@@ -87,14 +86,19 @@ public class RestrsService {
 				if(patientId !=  0 || patientName == null || patientName.equals("") || dob == null || dob.equals("") ||
 						gender == null || gender.equals("") || address == null || address.equals("") ||
 						telephoneNo == null || telephoneNo.equals("")) {
-					result = Response.status(Status.PRECONDITION_FAILED).build();
+					result = new ResponseEntity<>(null, HttpStatus.PRECONDITION_FAILED);
 				}
-				HplPatientMaster hplPatientMaster = restService.saveUpdatePatient(patientId, patientName, dob, gender, address, telephoneNo);
-				result = Response.ok(hplPatientMaster).build();
+				patientMaster.setPatientId(patientId);
+				HplPatientMaster hplPatientMaster = restService.saveUpdatePatient(patientMaster);
+				if(hplPatientMaster != null) {
+					result = new ResponseEntity<>(hplPatientMaster, HttpStatus.OK);
+				} else {
+					return new ResponseEntity<>(hplPatientMaster, HttpStatus.NO_CONTENT);
+				}
 		} catch(Exception e) {
 			log.error("Error in update patient");
 			e.printStackTrace();
-			result = Response.status(Status.NOT_MODIFIED).build();
+			result = new ResponseEntity<>(null, HttpStatus.NOT_MODIFIED);
 		}
 		return result;
 	}
@@ -103,22 +107,22 @@ public class RestrsService {
 	 * To delete a patient details
 	 * @author Selvakumaran Subramanian
 	 * @param patientId - patient table unique id
+	 * @return 
 	 */
 	@DeleteMapping("/patient/{patientId}")
-	public Response deletePatient(@PathVariable("patientId") Integer patientId ) {
-		Response result = null;
+	public ResponseEntity<String> deletePatient(@PathVariable("patientId") Integer patientId ) {
+		String response;
 		try {
 			if(patientId ==  0 ) {
-				result = Response.status(Status.PRECONDITION_FAILED).build();
+				return new ResponseEntity<>(null, HttpStatus.PRECONDITION_FAILED);
 			}
-			restService.deletePatient(patientId);
-			result = Response.status(Status.OK).build();
+			response = restService.deletePatient(patientId);
 		} catch(Exception e) { 
 			log.error("Error in delete patient");
 			e.printStackTrace();
-			result = Response.status(Status.NOT_MODIFIED).build();
+			return new ResponseEntity<>(null, HttpStatus.NOT_MODIFIED);
 		}
-		return result;
+		return  new ResponseEntity<>(response, HttpStatus.OK);
 	}
 	
 	/**
@@ -127,17 +131,17 @@ public class RestrsService {
 	 * @return List of patient detials
 	 */
 	@GetMapping("/patient")
-	public Response getPatients() {
-		Response result = null;
+	public ResponseEntity<List<HplPatientMaster>> getPatients() {
+		List<HplPatientMaster> patientDetails = new ArrayList<>();
 		try {
-			List<HplPatientMaster> patientDetails = restService.getPatients();
-			result = Response.ok(patientDetails).build();
+			patientDetails = restService.getPatients();
+			
 		} catch(Exception e) { 
 			log.error("Error in getting all patients detail ");
 			e.printStackTrace();
-			result = Response.status(Status.NOT_MODIFIED).build();
+			return new ResponseEntity<>(null, HttpStatus.NOT_MODIFIED);
 		}
-		return result;
+		return new ResponseEntity<>(patientDetails, HttpStatus.OK);
 	}
 	
 	/**
@@ -149,41 +153,18 @@ public class RestrsService {
 	 * @return List of patient detials
 	 */
 	@PostMapping("/patient/search")
-	  public Response getPatientDetails(@RequestBody HplFilterSort filterSort,
-	        @RequestParam(defaultValue = "0") int page,
+	  public ResponseEntity<HplPatientMasterResponse> getPatientDetails(@RequestBody HplFilterSort filterSort,
+	        @RequestParam(defaultValue = "1") int page,
 	        @RequestParam(defaultValue = "3") int size
 	      ) {
-		Response result = null;
+		ResponseEntity<HplPatientMasterResponse> result = null;
 		try {
-
-			List<Object> sortProperties = new ArrayList<>();
-			List<Object> sortTypes = new ArrayList<>();
-			List<Object> operator = new ArrayList<>();
-			List<Object> value = new ArrayList<>();
-			List<Object> property = new ArrayList<>();
-			if(filterSort != null) {
-				List<HplSort> sorts = filterSort.getSorts();
-				List<HplFilter> filters = filterSort.getFilters();
-				if(sorts != null) {
-					for(HplSort sort : sorts) {
-						sortProperties.add(sort.getProperty());
-						sortTypes.add(sort.getDir());
-					}
-				}
-				if(filters != null) {
-					for(HplFilter filter : filters) {
-						operator.add(filter.getOperator());
-						value.add(filter.getValue());
-						property.add(filter.getProperty());
-					}
-				}
-			}
-			HplPatientMasterResponse patientDetails = restService.getPatientdetails(sortProperties, sortTypes, operator, value, property, page, size);
-			result = Response.ok(patientDetails).build();
+			HplPatientMasterResponse patientDetails = restService.getPatientdetails(filterSort, page, size);
+			result = new ResponseEntity<>(patientDetails, HttpStatus.OK);
 		} catch(Exception e) { 
 			log.error("Error in getting all patients detail with filters and pagination ");
 			e.printStackTrace();
-			result = Response.status(Status.NOT_MODIFIED).build();
+			result = new ResponseEntity<>(null, HttpStatus.NOT_MODIFIED);
 		}
 		return result;
 	  }
