@@ -71,6 +71,7 @@ public class PresistenceServiceImpl implements PresistenceService {
 			}
 			hplPatientMaster = hplPatientMasterDao.saveAndFlush(hplPatientMaster);
 		} catch(Exception e) {
+			e.printStackTrace();
 			throw new Exception();
 		}
 		return hplPatientMaster;
@@ -198,6 +199,7 @@ public class PresistenceServiceImpl implements PresistenceService {
 			response.setPageNumber(page);
 			response.setTotalRecords(totalRecords);
 		}catch(Exception e) {
+			e.printStackTrace();
 			throw new Exception(e);
 		}
 		return response;

@@ -5,27 +5,39 @@ import static org.mockito.Mockito.doReturn;
 
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.Date;
+import java.util.List;
 import java.util.Optional;
 
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.boot.test.mock.mockito.MockBean;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.jguru.assignment.jpa.dao.HplPatientMasterDao;
 import com.jguru.assignment.jpa.model.HplPatientMaster;
+import com.jguru.assignment.response.model.HplPatientMasterResponse;
+import com.jguru.assignment.rqeust.model.HplFilter;
+import com.jguru.assignment.rqeust.model.HplFilterSort;
+import com.jguru.assignment.rqeust.model.HplSort;
 
 @SpringBootTest
 public class PresistenceServiceImplTest {
 
 
-	@MockBean
-    private PresistenceService service;
+//	@MockBean
+	@InjectMocks
+    private PresistenceServiceImpl service;
+	
+	@Mock
+	private PresistenceServiceImpl service1;
 
 
-    @MockBean
+    @Mock
     private HplPatientMasterDao repository;
     
     
@@ -41,7 +53,8 @@ public class PresistenceServiceImplTest {
     	HplPatientMaster patient = new HplPatientMaster(id,"Selvakumaran", dob, "M", "Chennai", "+91 9876765423","Y",1,currentDate,null,null);
     	HplPatientMaster returnedPatient = new HplPatientMaster(id,"Selvakumaran", dob, "M", "Chennai", "+91 9876765423","Y",1,currentDate,null,null);
     	doReturn(patient).when(repository).saveAndFlush(any());
-    	doReturn(returnedPatient).when(service).saveUpdatePatient(patient);
+    	//doReturn(returnedPatient).when(repository).savexUpdatePatient(patient);
+    	returnedPatient = service.saveUpdatePatient(patient);
     	// Assert the response
     	Assertions.assertNotNull(returnedPatient, "The saved patient should not be null");
     }	
@@ -55,16 +68,15 @@ public class PresistenceServiceImplTest {
     	Date currentDate = createdDateFormat.parse(createdDateFormat.format(new Date()));
     	// Setup our mock repository
     	HplPatientMaster patient = new HplPatientMaster(0,"Selvakumaran", dob, "M", "Chennai", "+91 9876765423","Y",1,currentDate,null,null);
-    	HplPatientMaster patient1 = new HplPatientMaster(1,"Selva", dob, "M", "Chennai", "+91 9876765423","Y",1,currentDate,null,null);
-
-    	doReturn(patient).when(repository).saveAndFlush(any());
-    	doReturn(patient1).when(service).saveUpdatePatient(patient);
+    	HplPatientMaster patient1 = new HplPatientMaster(1,"Selvakumaran", dob, "M", "Chennai", "+91 9876765423","Y",1,currentDate,null,null);
+    	HplPatientMaster returnPatient = new HplPatientMaster(1,"Selva", dob, "M", "Chennai", "+91 9876765423","Y",1,currentDate,null,null);
+    	doReturn(patient1).when(repository).saveAndFlush(any());
+    	doReturn(patient1).when(repository).findByPatientIdAndIsActive(patient1.getPatientId(), patient1.getIsActive());
 
     	// Execute the service call
-//    	HplPatientMaster returnedPatient = service.saveUpdatePatient(patient);
+    	returnPatient = service.saveUpdatePatient(returnPatient);
        	// Assert the response
-    	Assertions.assertNotNull(patient, "The saved patient should not be null");
-    	Assertions.assertNotSame(patient1.getPatientName(), patient.getPatientName(), "PatientName should not be same");
+    	Assertions.assertNotNull(returnPatient, "The saved patient should not be null");
     }
     
     @Test
@@ -79,10 +91,75 @@ public class PresistenceServiceImplTest {
     	
     	String reply = "Record Deleted Successfully";
     	doReturn(patient).when(repository).findByPatientIdAndIsActive(1, "Y");
-    	doReturn(reply).when(service).deletePatient(patient.getPatientId());
-
+    	reply = service.deletePatient(patient.getPatientId());
        	// Assert the response
     	Assertions.assertNotNull(reply, "The saved patient should not be null");
+   	
+    }
+    
+    @Test
+    @DisplayName("Test get patients")
+    void testGetPatients() throws Exception {
+    	DateFormat dobDateFormat  = new SimpleDateFormat("yyyy-MM-dd");
+    	Date dob = dobDateFormat.parse("1988-04-13");
+    	DateFormat createdDateFormat  = new SimpleDateFormat("yyyy-MM-dd HH:MM:SS");
+    	Date currentDate = createdDateFormat.parse(createdDateFormat.format(new Date()));
+    	// Setup our mock repository
+    	HplPatientMaster patient1 = new HplPatientMaster(1,"Selva", dob, "M", "Chennai", "+91 9876765423","Y",1,currentDate,null,null);
+    	HplPatientMaster patient2 = new HplPatientMaster(2,"Selvakumaran", dob, "M", "Chennai", "+91 9876765423","Y",1,currentDate,null,null);
+    	List<HplPatientMaster> list = new ArrayList<>();
+    	list.add(patient1);
+    	list.add(patient2);
+    	doReturn(list).when(repository).findByIsActive("Y");
+        // Execute the service call
+        List<HplPatientMaster> patients = service.getPatients();
+
+        // Assert the response
+        Assertions.assertEquals(2, patients.size(), "findAll should return 2 patients");
+   	
+    }
+    
+    @Test
+    @DisplayName("Test get patients details with filters")
+    void testGetPatientDetails() throws Exception {
+    	DateFormat dobDateFormat  = new SimpleDateFormat("yyyy-MM-dd");
+		Date dob = dobDateFormat.parse("1988-04-13");
+		DateFormat dateFormat  = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+		Date currentDate = dateFormat.parse(dateFormat.format(new Date()));
+		HplPatientMaster patient1 = new HplPatientMaster(1,"AAAA", dob, "M", "Chennai", "+91 1234567890","Y",1,currentDate,null,null);
+		HplPatientMaster patient2 = new HplPatientMaster(2,"Selvakumaran", dob, "M", "Chennai", "+91 9876765423","Y",1,currentDate,null,null);
+		HplPatientMaster patient3 = new HplPatientMaster(3,"BBB", dob, "F", "Chennai", "+91 9876765423","Y",1,currentDate,null,null);
+
+
+		HplSort hplSort = new HplSort("patientName", "asc");
+		HplFilter hplFilter = new HplFilter("eq", "M", "gender");
+		List<HplSort> sort = new ArrayList<>();
+		sort.add(hplSort);
+		List<HplFilter> filter = new ArrayList<>();
+		filter.add(hplFilter);
+		HplFilterSort hplFilterSort = new HplFilterSort(sort,filter);
+
+		List<HplPatientMaster> list = new ArrayList<>();
+		list.add(patient1);
+		list.add(patient2);
+		list.add(patient3);
+		HplPatientMasterResponse response = new HplPatientMasterResponse();
+		response.setRecords(list);
+		response.setPageNumber(1);
+		response.setTotalPages(1);
+		response.setTotalRecords(2);
+		
+		//doReturn(list).when(repository).findByIsActive("Y");
+		doReturn(response).when(service1).getPatientdetails(hplFilterSort,1,3);
+		
+
+		
+        // Execute the service call
+		
+		response = service.getPatientdetails(hplFilterSort,1,3);
+
+        // Assert the response
+        Assertions.assertEquals(2, response.getTotalRecords(), "findAll should return 2 patients");
    	
     }
 	
