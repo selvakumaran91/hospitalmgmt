@@ -113,7 +113,7 @@ public class PresistenceServiceImpl implements PresistenceService {
 			}
 			
 		} catch(Exception e) {
-			throw new Exception();
+			throw new IllegalArgumentException();
 		}
 		return response;
 	}

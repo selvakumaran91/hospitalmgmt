@@ -20,9 +20,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.jguru.assignment.jpa.model.HplPatientMaster;
 import com.jguru.assignment.response.model.HplPatientMasterResponse;
-import com.jguru.assignment.rqeust.model.HplFilter;
 import com.jguru.assignment.rqeust.model.HplFilterSort;
-import com.jguru.assignment.rqeust.model.HplSort;
 
 
 
@@ -146,7 +144,7 @@ public class RestrsService {
 	
 	/**
 	 * To Get all patient details with filters, sort and pagination
-	 * @author Selvakumaran Subramanian
+	 * @author SS104707 Selvakumaran Subramanian
 	 * @param filterSort - json sort/filter conditions
 	 * @param page - current page number
 	 * @param size - size of records to display in the current page

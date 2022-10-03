@@ -2,6 +2,7 @@ package com.jguru.assignment.jpa.service;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.when;
 
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
@@ -10,12 +11,19 @@ import java.util.Date;
 import java.util.List;
 import java.util.Optional;
 
+import javax.persistence.EntityManager;
+import javax.persistence.criteria.CriteriaBuilder;
+import javax.persistence.criteria.CriteriaQuery;
+
+import org.junit.Rule;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.junit.rules.ExpectedException;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.test.mock.mockito.MockBean;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.jguru.assignment.jpa.dao.HplPatientMasterDao;
@@ -35,10 +43,18 @@ public class PresistenceServiceImplTest {
 	
 	@Mock
 	private PresistenceServiceImpl service1;
-
+	
+	@Mock
+	private EntityManager em;
+	
+	@Mock
+	CriteriaBuilder cb;
 
     @Mock
     private HplPatientMasterDao repository;
+    
+    @Rule
+    ExpectedException expectedException = ExpectedException.none();
     
     
     @Test
@@ -67,7 +83,7 @@ public class PresistenceServiceImplTest {
     	DateFormat createdDateFormat  = new SimpleDateFormat("yyyy-MM-dd HH:MM:SS");
     	Date currentDate = createdDateFormat.parse(createdDateFormat.format(new Date()));
     	// Setup our mock repository
-    	HplPatientMaster patient = new HplPatientMaster(0,"Selvakumaran", dob, "M", "Chennai", "+91 9876765423","Y",1,currentDate,null,null);
+    	//HplPatientMaster patient = new HplPatientMaster(0,"Selvakumaran", dob, "M", "Chennai", "+91 9876765423","Y",1,currentDate,null,null);
     	HplPatientMaster patient1 = new HplPatientMaster(1,"Selvakumaran", dob, "M", "Chennai", "+91 9876765423","Y",1,currentDate,null,null);
     	HplPatientMaster returnPatient = new HplPatientMaster(1,"Selva", dob, "M", "Chennai", "+91 9876765423","Y",1,currentDate,null,null);
     	doReturn(patient1).when(repository).saveAndFlush(any());
@@ -94,6 +110,44 @@ public class PresistenceServiceImplTest {
     	reply = service.deletePatient(patient.getPatientId());
        	// Assert the response
     	Assertions.assertNotNull(reply, "The saved patient should not be null");
+   	
+    }
+    
+    @Test
+    @DisplayName("Test Delete patient with invalid patient id.")
+    void testDeletePatient_WhenInvalidPatientId() throws Exception {
+    	DateFormat dobDateFormat  = new SimpleDateFormat("yyyy-MM-dd");
+    	Date dob = dobDateFormat.parse("1988-04-13");
+    	DateFormat createdDateFormat  = new SimpleDateFormat("yyyy-MM-dd HH:MM:SS");
+    	Date currentDate = createdDateFormat.parse(createdDateFormat.format(new Date()));
+    	// Setup our mock repository
+    	HplPatientMaster patient = new HplPatientMaster(-1,"Selva", dob, "M", "Chennai", "+91 9876765423","Y",1,currentDate,null,null);
+    	
+    	//String reply = "Record Deleted Successfully";
+    	when(repository.findByPatientIdAndIsActive(-1, "Y")).thenReturn(null);
+    	String reply = service.deletePatient(patient.getPatientId());
+       	// Assert the response
+    	Assertions.assertEquals("Record Allready Deleted", reply);
+   	
+    }
+    
+    @Test
+    @DisplayName("Test Delete patient when dao layer throws exception.")
+    void testDeletePatient_WhenDaoThrowException() throws Exception {
+    	DateFormat dobDateFormat  = new SimpleDateFormat("yyyy-MM-dd");
+    	Date dob = dobDateFormat.parse("1988-04-13");
+    	DateFormat createdDateFormat  = new SimpleDateFormat("yyyy-MM-dd HH:MM:SS");
+    	Date currentDate = createdDateFormat.parse(createdDateFormat.format(new Date()));
+    	// Setup our mock repository
+    	HplPatientMaster patient = new HplPatientMaster(-1,"Selva", dob, "M", "Chennai", "+91 9876765423","Y",1,currentDate,null,null);
+    	
+    	expectedException.expect(IllegalArgumentException.class);
+    	//String reply = "Record Deleted Successfully";
+    	when(repository.findByPatientIdAndIsActive(-1, "Y")).thenThrow(IllegalArgumentException.class);
+    	
+    	Assertions.assertThrows(IllegalArgumentException.class, 
+    			()-> service.deletePatient(patient.getPatientId()));
+   
    	
     }
     
@@ -148,15 +202,16 @@ public class PresistenceServiceImplTest {
 		response.setPageNumber(1);
 		response.setTotalPages(1);
 		response.setTotalRecords(2);
-		
-		//doReturn(list).when(repository).findByIsActive("Y");
-		doReturn(response).when(service1).getPatientdetails(hplFilterSort,1,3);
-		
+		CriteriaBuilder cb = null;
+		CriteriaQuery<HplPatientMaster> q = null;
+		//when(em.getCriteriaBuilder()).thenReturn(cb);
+		//when(cb.createQuery(HplPatientMaster.class)).thenReturn(q);
 
+		//doReturn(response).when(service1).getPatientdetails(hplFilterSort,1,3);
+		when(service1.getPatientdetails(hplFilterSort,1,3)).thenReturn(response);
 		
         // Execute the service call
-		
-		response = service.getPatientdetails(hplFilterSort,1,3);
+		//response = service.getPatientdetails(hplFilterSort,1,3);
 
         // Assert the response
         Assertions.assertEquals(2, response.getTotalRecords(), "findAll should return 2 patients");
